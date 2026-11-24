@@ -1,5 +1,5 @@
 import React from 'react';
-import { AbsoluteFill, useCurrentFrame } from 'remotion';
+import { AbsoluteFill, Audio, staticFile, useCurrentFrame } from 'remotion';
 import { C, FONT, HAND, lin, p, sp } from './theme';
 import { Chip, Mascot, Panel, TopBar, popIn } from './ui';
 import { LeftPanel, Inspector } from './panels';
@@ -223,11 +223,140 @@ export const EditorReplica: React.FC = () => {
       {/* ---------------- 标注层 ---------------- */}
       <Annotations f={f} />
 
+      {/* 漂浮微尘 */}
+      {Array.from({ length: 12 }).map((_, i) => {
+        const seed = (i * 97 + 31) % 360;
+        const x = 24 + ((seed * 12.7) % 1230);
+        const drift = Math.sin((f + seed * 8) * 0.03) * 10;
+        const y = 700 - ((f * (1.4 + (seed % 7) * 0.25) + seed * 29) % 780);
+        return (
+          <div
+            key={`dust${i}`}
+            style={{
+              position: 'absolute',
+              left: x + drift,
+              top: y,
+              width: 3,
+              height: 3,
+              borderRadius: 1.5,
+              background: '#A89C82',
+              opacity: 0.1 + 0.08 * Math.sin(f * 0.04 + i),
+              pointerEvents: 'none',
+            }}
+          />
+        );
+      })}
+
+      {/* 鼠标光标 + 点击涟漪（模拟录制操作） */}
+      <Cursor f={f} />
+
+      {/* 暗角 */}
+      <AbsoluteFill
+        style={{
+          background:
+            'radial-gradient(ellipse 130% 90% at 50% 40%, rgba(255,253,246,0.4) 0%, rgba(255,253,246,0) 45%, rgba(74,60,40,0.14) 100%)',
+          pointerEvents: 'none',
+        }}
+      />
+
+      {/* 背景音乐（原创 lo-fi，与画面节拍对齐） */}
+      <Audio src={staticFile('bgm.mp3')} />
+
       {/* 开场/收尾之外的手机黑屏淡入 */}
       <AbsoluteFill
         style={{ background: C.bg, opacity: 1 - p(f, 0, 10), pointerEvents: 'none' }}
       />
     </AbsoluteFill>
+  );
+};
+
+/* ---------------- 鼠标光标（模拟录制操作） ---------------- */
+const WP: [number, number, number][] = [
+  [56, 640, 360],
+  [82, 90, 145],
+  [106, 90, 145],
+  [140, 340, 470],
+  [210, 541, 519],
+  [238, 541, 519],
+  [256, 130, 84],
+  [300, 130, 84],
+  [332, 240, 298],
+  [338, 240, 298],
+  [344, 200, 84],
+  [350, 200, 84],
+  [400, 620, 300],
+  [660, 700, 250],
+  [700, 1210, 27],
+  [714, 1210, 27],
+];
+const CLICKS: [number, number, number][] = [
+  [88, 90, 145],
+  [238, 541, 519],
+  [264, 130, 84],
+  [338, 240, 298],
+  [348, 200, 84],
+  [714, 1210, 27],
+];
+
+const Cursor: React.FC<{ f: number }> = ({ f }) => {
+  const vis = p(f, 50, 62) * (1 - p(f, 730, 746));
+  if (vis <= 0) return null;
+  let x = WP[WP.length - 1][1];
+  let y = WP[WP.length - 1][2];
+  for (let i = 0; i < WP.length - 1; i++) {
+    if (f >= WP[i][0] && f < WP[i + 1][0]) {
+      const q = p(f, WP[i][0], WP[i + 1][0]);
+      x = WP[i][1] + (WP[i + 1][1] - WP[i][1]) * q;
+      y = WP[i][2] + (WP[i + 1][2] - WP[i][2]) * q;
+      break;
+    }
+  }
+  const pressing = CLICKS.some(([cf]) => f >= cf - 3 && f <= cf + 5);
+  return (
+    <>
+      {CLICKS.map(([cf, cx, cy]) => {
+        const dt = f - cf;
+        if (dt < 0 || dt > 18) return null;
+        const q = dt / 18;
+        return (
+          <div
+            key={`ripple${cf}`}
+            style={{
+              position: 'absolute',
+              left: cx - 30 * q,
+              top: cy - 30 * q,
+              width: 60 * q,
+              height: 60 * q,
+              borderRadius: 30 * q,
+              border: '2.5px solid rgba(240,100,60,0.9)',
+              opacity: (1 - q) * 0.85,
+              pointerEvents: 'none',
+              zIndex: 190,
+            }}
+          />
+        );
+      })}
+      <div
+        style={{
+          position: 'absolute',
+          left: x,
+          top: y,
+          opacity: vis * 0.9,
+          zIndex: 200,
+          pointerEvents: 'none',
+          transform: `translate(-2px,-2px) scale(${pressing ? 0.8 : 1})`,
+        }}
+      >
+        <svg width="20" height="24" viewBox="0 0 20 24">
+          <path
+            d="M3 1 L3 19 L7.5 14.5 L10.5 21 L13.5 19.5 L10.5 13.5 L16 13.5 Z"
+            fill="#2A2724"
+            stroke="#FFFDF6"
+            strokeWidth="1.6"
+          />
+        </svg>
+      </div>
+    </>
   );
 };
 

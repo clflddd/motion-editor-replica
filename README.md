@@ -41,19 +41,44 @@ npm run still    # 输出 out/still.png（默认第 0 帧）
 npx remotion still src/index.ts EditorReplica out/frame-500.png --frame=500
 ```
 
+## 背景音乐
+
+`public/bgm.mp3` 是一段 30 秒原创 lo-fi 配乐（120 BPM），由 `scripts/gen-bgm.js` 纯代码合成并踩点对齐画面动作：
+
+| 时间 | 音乐事件 | 对应画面 |
+| --- | --- | --- |
+| 1.9s | 谁许上升 → 落拍 | 编辑器面板弹入 |
+| 8.35s | 低音「哐当」 | 废片扔进垃圾桶 |
+| 14.15s | 「叮」铃 | Ctrl+Z 撤销 / 已修正印章 |
+| 15.7→17s | 上升 + 镲片 | 饱和度拉满 |
+| 20.0s | 十六分踩镲密度加倍 | 卡点标记瀑布 |
+| 24.0s | 鼓组抽稀 | 导出渲染 |
+| 28.0s | 终止和弦 + 三连铃 | 收工便签 |
+
+旋律为五声音阶拨弦（带附点回声），和声进行 Cmaj7 → Am7 → Fmaj7 → G7，鼓组 kick/snare/hat 全部参数化合成，无版权素材。
+
+重新生成音乐：
+
+```bash
+npm run bgm
+ffmpeg -y -i out/bgm.wav -codec:a libmp3lame -b:a 192k public/bgm.mp3
+```
+
 ## 目录结构
 
 ```
-src/
-├── index.ts          # registerRoot
-├── Root.tsx          # Composition：900 帧 / 30fps / 1280×720
-├── theme.ts          # 调色板、字体、缓动、时间轴几何常量
-├── scenes.tsx        # 月夜 / 拉面 / 柴犬 / 霓虹小克 四组 SVG 画面 + 手机壳
-├── ui.tsx            # 面板、贴纸、手写箭头、吉祥物、标题栏
-├── panels.tsx        # 左侧素材/转场/文字面板、右侧调整滑杆
-├── timeline.tsx      # 刻度、片段、斜线废片、波形、卡点标记、垃圾桶、播放头
-├── intro.tsx         # 开场代码窗口、结尾手写便签
-└── EditorReplica.tsx # 主时间线编排与全部手写标注
+├── public/bgm.mp3     # 原创合成配乐（Remotion staticFile 自动加载）
+├── scripts/gen-bgm.js # 配乐生成脚本（DSP 合成，可复现）
+└── src/
+    ├── index.ts          # registerRoot
+    ├── Root.tsx          # Composition：900 帧 / 30fps / 1280×720
+    ├── theme.ts           # 调色板、字体、缓动、时间轴几何常量
+    ├── scenes.tsx         # 月夜 / 拉面 / 柴犬 / 霓虹小克 四组 SVG 画面 + 手机壳
+    ├── ui.tsx             # 面板、贴纸、手写箭头、吉祥物、标题栏
+    ├── panels.tsx         # 左侧素材/转场/文字面板、右侧调整滑杆
+    ├── timeline.tsx       # 刻度、片段、斜线废片、波形、卡点标记、垃圾桶、播放头
+    ├── intro.tsx          # 开场代码窗口、结尾手写便签
+    └── EditorReplica.tsx  # 主时间线编排、鼠标光标与全部手写标注
 ```
 
 ## 技术要点

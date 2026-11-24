@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "remotion studio src/index.ts",
     "render": "remotion render src/index.ts EditorReplica out/editor-replica.mp4",
-    "still": "remotion still src/index.ts EditorReplica out/still.png"
+    "still": "remotion still src/index.ts EditorReplica out/still.png",
+    "bgm": "node scripts/gen-bgm.js"
   },
   "dependencies": {
     "@remotion/cli": "4.0.484",
