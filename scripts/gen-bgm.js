@@ -242,6 +242,79 @@ addLR(28.05, ding(1568, 0.25), 0.42, 0.58);
 addLR(28.25, ding(2093, 0.18, 0.5), 0.42, 0.58);
 addLR(28.45, ding(2637, 0.15, 0.6), 0.42, 0.58);
 
+/* ---------------- 卡点音效层 ---------------- */
+function whoosh(dur, g) {
+  // 短促「嗖」：高通噪声 + 正弦起落包络
+  const n = Math.round(dur * SR);
+  const s = new Float64Array(n);
+  let prev = 0;
+  for (let i = 0; i < n; i++) {
+    const k = i / n;
+    const x = Math.random() * 2 - 1;
+    const hp = x - prev;
+    prev = x;
+    s[i] = hp * Math.sin(Math.PI * k) * g;
+  }
+  return s;
+}
+
+function blip(f0, f1, dur, g) {
+  // 上升小弹音（面板/卡片弹出）
+  const n = Math.round(dur * SR);
+  const s = new Float64Array(n);
+  let ph = 0;
+  for (let i = 0; i < n; i++) {
+    const k = i / n;
+    const f = f0 + (f1 - f0) * k;
+    ph += (TAU * f) / SR;
+    s[i] = Math.sin(ph) * Math.sin(Math.PI * k) * g;
+  }
+  return s;
+}
+
+function tick(g) {
+  // 极短「嗒」（卡点标记落点）
+  const n = Math.round(0.03 * SR);
+  const s = new Float64Array(n);
+  for (let i = 0; i < n; i++) {
+    const t = i / SR;
+    s[i] =
+      (Math.sin(TAU * 3000 * t) * Math.exp(-t * 300) +
+        (Math.random() * 2 - 1) * Math.exp(-t * 900)) *
+      g;
+  }
+  return s;
+}
+
+function tap(f, g, dur) {
+  // 中频点击（文字预设 / 印章落章）
+  const n = Math.round((dur || 0.06) * SR);
+  const s = new Float64Array(n);
+  for (let i = 0; i < n; i++) {
+    const t = i / SR;
+    s[i] = Math.sin(TAU * f * t) * Math.exp(-t * 60) * g;
+  }
+  return s;
+}
+
+// 画面切换（手机四段素材切换帧 185/250/330/470）：嗖 + 落点重击
+const CUTS = [6.17, 8.33, 11.0, 15.67];
+for (const t of CUTS) {
+  addLR(t - 0.22, whoosh(0.22, 0.3), 0.42, 0.58);
+  addLR(t, kick(0.42), 0.5, 0.5);
+}
+// 编辑器面板依次弹入的小弹音（帧 34/46/56 → 1.13~2.07s）
+[1.13, 1.53, 1.87, 2.07].forEach((t) => addLR(t, blip(320, 720, 0.1, 0.22), 0.5, 0.5));
+// 转场卡逐张飞入（帧 300+3i → 10.0~10.5s）：嗒
+for (let i = 0; i < 6; i++) addLR(10.0 + i * 0.1, tick(0.22), 0.45, 0.55);
+// 文字预设落位 + 「已修正」印章（帧 390/396 → 13.0/13.2s）
+addLR(13.0, tap(900, 0.3, 0.08), 0.45, 0.55);
+addLR(13.2, tap(500, 0.35, 0.12), 0.5, 0.5);
+// 卡点标记瀑布（帧 596~626 → 19.87~20.87s）：密集嗒嗒填充
+for (let k = 0; k < 23; k++) addLR(19.9 + k * 0.047, tick(0.16), 0.42, 0.58);
+// 导出按钮确认音（帧 714 → 23.8s）
+addLR(23.8, blip(500, 900, 0.12, 0.28), 0.5, 0.5);
+
 /* ---------------- 母带 + 写 WAV ---------------- */
 let peak = 0;
 for (let i = 0; i < N; i++) peak = Math.max(peak, Math.abs(L[i]), Math.abs(R[i]));
